@@ -37,13 +37,22 @@
       if (!arguments.length) eof_error = true;
       if (this.end == (this.pos+1)) {
         if (eof_error) {
-          throw new Error("EOF");
+          throw new EofError();
         } else {
           return eof_val;
         }
       }
       return this.string[this.pos+1];
     };
+
+    var EofError = exports.EofError = function(message, stream) {
+      this.name = "EofError";
+      this.stream = stream;
+      this.message = message ||
+        "Encountered end-of-file while processing stream.";
+    };
+    EofError.prototype = new Error();
+    EofError.prototype.constructor = EofError;
 
     return exports;
   })({});
@@ -130,7 +139,7 @@
       var str = "";
       for (var c = stream.peek(false, null); c !== "\n"; c = stream.peek(false, null)) {
         if (eof_error && c === null) {
-          throw new Error("EOF");
+          throw new streams.EofError();
         } else  if (!eof_error && c === null) {
           return str;
         } else if (c === "\n") {
