@@ -137,7 +137,9 @@
     var read_line = exports.read_line = function(stream, eof_error, eof_val) {
       if (arguments.length == 1) eof_error = true;
       var str = "";
-      for (var c = stream.peek(false, null); c !== "\n"; c = stream.peek(false, null)) {
+      for (var c = stream.peek(false, null);
+           c !== "\n";
+           c = stream.peek(false, null)) {
         if (eof_error && c === null) {
           throw new streams.EofError();
         } else  if (!eof_error && c === null) {
@@ -174,7 +176,9 @@
           collecting_token = false,
           rmf,
           result;
-      for (var c = stream.peek(true); c !== null; c = stream.peek(false, null)) {
+      for (var c = stream.peek(true);
+           c !== null;
+           c = stream.peek(false, null)) {
         rmf = reader_macro_function(c);
         if (rmf && collecting_token) {
           return [token, false];
@@ -222,7 +226,8 @@
       }
       for (var i = 0; i < token.length; i++) {
         if (!isNaN(parseInt(token[i], exports.READ_BASE))) {
-          mantissa = (mantissa * exports.READ_BASE) + parseInt(token[i], exports.READ_BASE);
+          mantissa = ((mantissa * exports.READ_BASE)
+                      + parseInt(token[i], exports.READ_BASE));
         } else {
           return undefined;
         }
@@ -274,8 +279,8 @@
         }
       }
       result = ((before_decimal
-                 + (after_decimal * Math.pow(exports.READ_BASE, -decimal_counter))
-                )
+                 + (after_decimal
+                    * Math.pow(exports.READ_BASE, -decimal_counter)))
                 * Math.pow(exports.READ_BASE, exponent));
       if (found_digit_p) {
         return minusp?-result:result;
