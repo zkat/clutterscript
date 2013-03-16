@@ -3,8 +3,10 @@
 /* vim: set ft=javascript ts=2 et sw=2 tw=80; */
 "use strict";
 (function (factory) {
-  if (typeof define === "function" && define.amd) {
+  if (typeof define === "function" && typeof define.amd == "object" && define.amd) {
     define(factory);
+  } else if (typeof module == "object" && module) {
+    module.exports = factory();
   } else {
     window.clutterscript = factory();
   }
