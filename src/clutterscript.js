@@ -186,6 +186,11 @@
       return str;
     };
 
+    function find_macro_function(c, stream) {
+      // TODO - dispatching macro characters
+      return exports.READTABLE.macro_functions[c];
+    }
+
     function read_token(stream) {
       var token = "",
           collecting_token = false,
@@ -194,7 +199,7 @@
       for (var c = stream.peek(true);
            c !== null;
            c = stream.peek(false, null)) {
-        rmf = exports.READTABLE.macro_functions[c];
+        rmf = find_macro_function(c, stream);
         if (rmf && collecting_token) {
           return [token, false];
         } else if (rmf) {
