@@ -88,30 +88,59 @@
    * Reader
    *
    * Reads ClutterScript code from a Stream and returns a value
-   * representing the expression. The reader can be extended with reader
-   * macros which are able to dispatch on specific characters.
+   * representing the expression. The reader can be configured and extended
+   * with reader macros which are able to dispatch on specific characters.
    */
   var reader = exports.reader = (function(streams, symbols, exports) {
-    exports.READ_BASE = 10;
-    var WHITESPACE = " \r\t\n",
-        SINGLE_ESCAPE = "\\",
-        READER_MACRO_FUNCTIONS = {};
+    var merge = function(obj1, obj2) {
+      var obj3 = {};
+      for (var attr1 in obj1) {
+        if (obj1.hasOwnProperty(attr1)) obj3[attr1] = obj1[attr1];
+      };
+      for (var attr2 in obj2) {
+        if (obj2.hasOwnProperty(attr2)) obj3[attr2] = obj2[attr2];
+      };
+      return obj3;
+    };
+
+    var Readtable = exports.Readtable = function(opts) {
+      var merge_with = opts.merge || exports.READTABLE || {};
+      this.macro_functions = merge(merge_with.macro_functions,
+                                   opts.macro_functions || {});
+      this.read_base = opts.read_base || merge_with.read_base;
+      this.string_escape_mappings = merge(merge_with.string_escape_mappings,
+                                          opts.string_escape_mappings || {});
+      this.string_escape_character = (opts.string_escape_character ||
+                                      merge_with.string_escape_character);
+    };
+
+    exports.READTABLE = exports.standard_readtable = new Readtable({
+      read_base: 10,
+      macro_functions: {
+        "(": function(strm) { return read_delimited_array(")", strm); },
+        ")": function()     { throw new SyntaxError("Unmatched ')'"); },
+        "'": function(strm) { return [symbols.intern("quote"), read(strm)]; },
+        '"': function(strm) { return read_string('"', strm); },
+        ";": function(strm) { read_line(strm, false); }
+      },
+      string_escape_character: "\\",
+      string_escape_mappings: {
+        "n": "\n",
+        "r": "\r",
+        "t": "\t",
+        "s": " "
+      }
+    });
+
+    var reset_readtable = exports.reset_readtable = function() {
+      exports.READTABLE = exports.standard_readtable;
+    };
+
+    var WHITESPACE = " \r\t\n";
 
     function whitespacep(c) {
       return WHITESPACE.indexOf(c) !== -1;
     }
-
-    function reader_macro_function(c) {
-      return READER_MACRO_FUNCTIONS[c];
-    }
-
-    var set_reader_macro_function = exports.set_reader_macro_function = function(c, fn) {
-      READER_MACRO_FUNCTIONS[c] = fn;
-    };
-
-    var unset_reader_macro = exports.unset_reader_macro = function(c) {
-      delete READER_MACRO_FUNCTIONS[c];
-    };
 
     var read_delimited_array = exports.read_delimited_array = function(end_char, stream) {
       var arr = [];
@@ -123,10 +152,12 @@
     };
 
     var read_string = exports.read_string = function(end_char, stream) {
-      var result = "";
+      var result = "", escaped_char, escape_mapping;
       for (var new_char = stream.next(); new_char != end_char; new_char = stream.next()) {
-        if (SINGLE_ESCAPE === new_char) {
-          result += stream.next();
+        if (exports.READTABLE.string_escape_character === new_char) {
+          escaped_char = stream.next();
+          escape_mapping = exports.READTABLE.string_escape_mappings[escaped_char];
+          result += escape_mapping?escape_mapping:escaped_char;
         } else {
           result += new_char;
         }
@@ -155,22 +186,6 @@
       return str;
     };
 
-    set_reader_macro_function("(", function(stream) {
-      return read_delimited_array(")", stream);
-    });
-    set_reader_macro_function("'", function(stream) {
-      return [symbols.intern("quote"), read(stream)];
-    });
-    set_reader_macro_function(")", function() {
-      throw new Error("Unmatched ')'");
-    });
-    set_reader_macro_function("\"", function(stream) {
-      return read_string("\"", stream);
-    });
-    set_reader_macro_function(";", function(stream) {
-      read_line(stream, false);
-    });
-
     function read_token(stream) {
       var token = "",
           collecting_token = false,
@@ -179,7 +194,7 @@
       for (var c = stream.peek(true);
            c !== null;
            c = stream.peek(false, null)) {
-        rmf = reader_macro_function(c);
+        rmf = exports.READTABLE.macro_functions[c];
         if (rmf && collecting_token) {
           return [token, false];
         } else if (rmf) {
@@ -225,9 +240,9 @@
         }
       }
       for (var i = 0; i < token.length; i++) {
-        if (!isNaN(parseInt(token[i], exports.READ_BASE))) {
-          mantissa = ((mantissa * exports.READ_BASE)
-                      + parseInt(token[i], exports.READ_BASE));
+        if (!isNaN(parseInt(token[i], exports.READTABLE.read_base))) {
+          mantissa = ((mantissa * exports.READTABLE.read_base)
+                      + parseInt(token[i], exports.READTABLE.read_base));
         } else {
           return undefined;
         }
@@ -256,18 +271,18 @@
       var c, weight, ex;
       for (; i < token.length; i++) {
         c = token[i];
-        weight = parseInt(c, exports.READ_BASE);
+        weight = parseInt(c, exports.READTABLE.read_base);
         if (isNaN(weight)) weight = false;
         if (weight && !found_point_p) {
-          before_decimal = weight + (before_decimal * exports.READ_BASE);
+          before_decimal = weight + (before_decimal * exports.READTABLE.read_base);
           found_digit_p = true;
         } else if (weight && found_point_p) {
-          after_decimal = weight + (after_decimal * exports.READ_BASE);
+          after_decimal = weight + (after_decimal * exports.READTABLE.read_base);
           found_digit_p = true;
           decimal_counter++;
         } else if ("." == c && !found_point_p) {
           found_point_p = true;
-        } else if (("e" == c || "E" == c) && exports.READ_BASE == 10) {
+        } else if (("e" == c || "E" == c) && exports.READTABLE.read_base == 10) {
           exponent = parse_integer_token(token.substring(i+1));
           if (exponent || exponent == 0) {
             i += token.substring(i+1).length;
@@ -280,8 +295,8 @@
       }
       result = ((before_decimal
                  + (after_decimal
-                    * Math.pow(exports.READ_BASE, -decimal_counter)))
-                * Math.pow(exports.READ_BASE, exponent));
+                    * Math.pow(exports.READTABLE.read_base, -decimal_counter)))
+                * Math.pow(exports.READTABLE.read_base, exponent));
       if (found_digit_p) {
         return minusp?-result:result;
       } else {
