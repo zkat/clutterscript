@@ -49,6 +49,10 @@
     this.name = name;
   };
 
+  Symbol.prototype.toString = function() {
+    return this.name;
+  };
+
   var intern = exports.intern = function(name) {
     if (!SYMBOLS[name]) {
       SYMBOLS[name] = new Symbol(name);
