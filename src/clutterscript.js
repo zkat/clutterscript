@@ -337,20 +337,27 @@
 
     var compile = exports.compile = function (string, env) {
       // TODO - this only reads a single expression
-      return compile_form(reader.read(string), new Lexenv(env));
+      return compile_form(reader.read(string), new lexenvs.Lexenv(env));
     };
 
     var compile_form = exports.compile_form = function(form, env) {
       return nodes.objectify(form, env).compile();
     };
 
-    var GLOBAL_LEXENV = undefined;
+    /*
+     * Lexenvs
+     */
+    var lexenvs = exports.lexenvs = (function(exports) {
+      exports.GLOBAL_LEXENV = undefined;
 
-    var Lexenv = exports.Lexenv = function(parent) {
-      parent = parent || GLOBAL_LEXENV;
-    };
+      var Lexenv = exports.Lexenv = function(parent) {
+        parent = parent || exports.GLOBAL_LEXENV;
+      };
 
-    GLOBAL_LEXENV = new Lexenv();
+      exports.GLOBAL_LEXENV = new Lexenv();
+
+      return exports;
+    })({});
 
     var nodes = exports.nodes = (function(exports) {
 
