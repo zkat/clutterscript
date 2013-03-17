@@ -14,7 +14,7 @@ describe("compiler", function() {
   });
   describe("compile_form", function() {
     var compile_form = compiler.compile_form;
-    var Lexenv = compiler.Lexenv;
+    var Lexenv = compiler.lexenvs.Lexenv;
     it("compiles literals into their string representation", function() {
       assert.equal("1", compile_form(1, new Lexenv()));
       assert.equal("1.5", compile_form(1.5, new Lexenv()));
