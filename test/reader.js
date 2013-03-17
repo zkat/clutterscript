@@ -113,6 +113,8 @@ describe("reader", function() {
         assert.equal(12345.67890, read("12345.67890"));
         assert.equal(1.5, read("+1.5"));
         assert.equal(-1.5, read("-1.5"));
+        assert.equal(1e10, read("1e10"));
+        assert.equal(1e-10, read("1e-10"));
         assert.equal(1.5e10, read("1.5e10"));
         assert.equal(1.5e-10, read("1.5e-10"));
       });
@@ -124,6 +126,8 @@ describe("reader", function() {
         assert.equal("foo.bar", (read("foo.bar")).name);
         assert.equal("-1.bar", (read("-1.bar")).name);
         assert.equal("bar.1e10", (read("bar.1e10")).name);
+        assert.equal("-", (read("-")).name);
+        assert.equal("+", (read("+")).name);
       });
     });
     describe("standard macro syntax", function() {

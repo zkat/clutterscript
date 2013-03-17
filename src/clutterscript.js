@@ -29,7 +29,7 @@
 
     Stream.prototype.next = function(eof_error, eof_val) {
       var next = this.peek.apply(this, arguments);
-      this.pos++;
+      if (next !== eof_val) this.pos++;
       return next;
     };
 
@@ -244,12 +244,12 @@
           token = maybe_token;
         }
       }
-      for (var i = 0; i < token.length; i++) {
-        if (!isNaN(parseInt(token[i], exports.READTABLE.read_base))) {
-          mantissa = ((mantissa * exports.READTABLE.read_base)
-                      + parseInt(token[i], exports.READTABLE.read_base));
-        } else {
+      for (var i = 0, parsed_digit; i < token.length; i++) {
+        parsed_digit = parseInt(token[i], exports.READTABLE.read_base);
+        if (isNaN(parsed_digit)) {
           return undefined;
+        } else {
+          mantissa = parsed_digit + (mantissa * exports.READTABLE.read_base);
         }
       }
       return minusp?-mantissa:mantissa;
@@ -263,9 +263,9 @@
           after_decimal = 0,
           decimal_counter = 0,
           exponent = 0,
-          result,
           i = 0,
-          first_char = token[0];
+          first_char = token[0],
+          read_base = exports.READTABLE.read_base;
       if ("-" == first_char) {
         minusp = true;
         i++;
@@ -279,15 +279,15 @@
         weight = parseInt(c, exports.READTABLE.read_base);
         if (isNaN(weight)) weight = false;
         if (weight && !found_point_p) {
-          before_decimal = weight + (before_decimal * exports.READTABLE.read_base);
+          before_decimal = weight + (before_decimal * read_base);
           found_digit_p = true;
         } else if (weight && found_point_p) {
-          after_decimal = weight + (after_decimal * exports.READTABLE.read_base);
+          after_decimal = weight + (after_decimal * read_base);
           found_digit_p = true;
           decimal_counter++;
         } else if ("." == c && !found_point_p) {
           found_point_p = true;
-        } else if (("e" == c || "E" == c) && exports.READTABLE.read_base == 10) {
+        } else if (("e" == c || "E" == c) && read_base == 10) {
           exponent = parse_integer_token(token.substring(i+1));
           if (exponent || exponent == 0) {
             i += token.substring(i+1).length;
@@ -298,10 +298,9 @@
           return undefined;
         }
       }
-      result = ((before_decimal
-                 + (after_decimal
-                    * Math.pow(exports.READTABLE.read_base, -decimal_counter)))
-                * Math.pow(exports.READTABLE.read_base, exponent));
+      var result = ((before_decimal
+                     + (after_decimal * Math.pow(read_base, -decimal_counter)))
+                    * Math.pow(read_base, exponent));
       if (found_digit_p) {
         return minusp?-result:result;
       } else {
@@ -322,6 +321,7 @@
 
     var read = exports.read = function (stream) {
       return read_from_stream(
+        // TODO - more robust string check?
         (stream instanceof String || typeof stream == "string")?
           new streams.Stream(stream):
           stream);
