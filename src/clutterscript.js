@@ -118,7 +118,7 @@
       read_base: 10,
       macro_functions: {
         "(": function(strm) { return read_delimited_array(")", strm); },
-        ")": function()     { throw new SyntaxError("Unmatched ')'"); },
+        ")": function()     { throw new streams.EofError("Unmatched ')'"); },
         "'": function(strm) { return [symbols.intern("quote"), read(strm)]; },
         '"': function(strm) { return read_string('"', strm); },
         ";": function(strm) { read_line(strm, false); }
@@ -194,17 +194,17 @@
     function read_token(stream) {
       var token = "",
           collecting_token = false,
-          rmf,
+          macro_function,
           result;
       for (var c = stream.peek(true);
            c !== null;
            c = stream.peek(false, null)) {
-        rmf = find_macro_function(c, stream);
-        if (rmf && collecting_token) {
+        macro_function = find_macro_function(c, stream);
+        if (macro_function && collecting_token) {
           return [token, false];
-        } else if (rmf) {
+        } else if (macro_function) {
           stream.next(false);
-          result = rmf(stream, c);
+          result = macro_function(stream, c);
           if (result !== undefined) return [result, true];
         } else if (collecting_token && whitespacep(c)) {
           stream.next(false);
@@ -231,7 +231,6 @@
           first_char = token[0],
           maybe_token,
           mantissa = 0;
-      // Check sign
       if ("-" == first_char) {
         maybe_token = token.substring(1);
         if (maybe_token.length) {
