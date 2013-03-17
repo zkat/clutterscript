@@ -70,6 +70,10 @@
       return this.name;
     };
 
+    var isSymbol = exports.isSymbol = function(x) {
+      return x instanceof Symbol;
+    };
+
     var intern = exports.intern = function(name) {
       if (!SYMBOLS[name]) {
         SYMBOLS[name] = new Symbol(name);
@@ -350,10 +354,32 @@
     var lexenvs = exports.lexenvs = (function(exports) {
       exports.GLOBAL_LEXENV = undefined;
 
-      var Lexenv = exports.Lexenv = function(parent) {
-        parent = parent || exports.GLOBAL_LEXENV;
+      var Lexenv = exports.Lexenv = function(parent, variables) {
+        this.parent = parent || exports.GLOBAL_LEXENV;
+        this.variables = variables || [];
+      };
+      Lexenv.prototype.extend = function(symbol) {
+        var variable = new Variable(symbol);
+        this.variables.push(variable);
+        return variable;
+      };
+      Lexenv.prototype.find_variable = function(symbol) {
+        for (var i = 0; i < this.variables.length; i++) {
+          if (this.variables[i].symbol == symbol) {
+            return this.variables[i];
+          }
+        }
+        if (this.parent) {
+          return this.parent.find_variable(symbol);
+        } else {
+          return false;
+        }
       };
 
+      function symbolicate(x) { return new Variable(x); };
+      function Variable(symbol) {
+        this.symbol = symbol;
+      }
       exports.GLOBAL_LEXENV = new Lexenv();
 
       return exports;
@@ -362,7 +388,15 @@
     var nodes = exports.nodes = (function(exports) {
 
       var objectify = exports.objectify = function(form, env) {
-        return objectify_literal(form, env);
+        if (isArray(form)) {
+          return objectify_operation(form[0], form.slice(1), env);
+        } else {
+          if (symbols.isSymbol(form)) {
+            return objectify_symbol(form, env);
+          } else {
+            return objectify_literal(form, env);
+          }
+        }
       };
 
       function objectify_literal(form, env) {
@@ -376,6 +410,100 @@
         return new Fragment(isString(this.value)?'"'+this.value+'"':""+this.value).code;
       };
 
+      function objectify_symbol(symbol, env) {
+        var variable = env.find_variable(symbol);
+        if (variable) {
+          return new Reference(variable);
+        } else {
+          return objectify_free_global_variable(symbol, env);
+        }
+      }
+
+      function objectify_free_global_variable(symbol, env) {
+        console.warn("Compiling reference to unknown variable");
+        return new Reference(lexenvs.GLOBAL_LEXENV.extend(symbol));
+      }
+
+      function Reference(variable) {
+        this.variable = variable;
+      }
+      Reference.prototype.compile = function() {
+        return new Fragment(ensure_js_identifier(this.variable.symbol.name)).code;
+      };
+
+      function ensure_js_identifier(name) {
+        // Punt on JSification for now. It'll take a while.
+        return name;
+      }
+
+      // http://es5.github.com/x7.html#x7.6.1
+      var JS_KEYWORDS = ["break", "case", "catch", "continue",
+                         "debugger", "default", "delete", "do",
+                         "else", "finally", "for", "function",
+                         "if", "in", "instanceof", "new", "return",
+                         "switch", "this", "throw", "try", "typeof",
+                         "var", "void", "while", "with"];
+      var JS_FUTURE_RESERVED_WORDS = ["class", "const", "enum", "export",
+                                      "extends", "import", "super"];
+      var JS_STRICT_FUTURE_RESERVED_WORDS =
+            ["implements", "interface", "let", "package", "private",
+             "protected", "public", "static", "yield"];
+      var JS_NULL_LITERAL = ["null"];
+      var JS_BOOLEAN_LITERAL = ["true", "false"];
+      var ADDITIONAL_RESERVATIONS = ["eval"];
+      var JS_RESERVED_WORDS =
+            JS_KEYWORDS + JS_FUTURE_RESERVED_WORDS +
+            JS_STRICT_FUTURE_RESERVED_WORDS +
+            JS_NULL_LITERAL + JS_BOOLEAN_LITERAL +
+            ADDITIONAL_RESERVATIONS;
+
+      var JS_PUNCTUATORS = {
+        "{": "lcurly",
+        "}": "rcurly",
+        "(": "lparen",
+        ")": "rparen",
+        "[": "lsquare",
+        "]": "rsquare",
+        ".": "dot",
+        ";": "semicolon",
+        ",": "comma",
+        "<": "lt",
+        ">": "gt",
+        "=": "eq",
+        "!": "bang",
+        "+": "plus",
+        "-": "minus",
+        "*": "times",
+        "%": "perc",
+        "&": "amp",
+        "|": "pipe",
+        "^": "hat",
+        "~": "tilde",
+        "?": "question",
+        ":": "colon",
+        "/": "slash"
+      };
+
+      function objectify_operation(op, args, env) {
+        return new Application(objectify(op, env),
+                               args.map(function(arg) {
+                                 return objectify(arg, env);
+                               }));
+      }
+
+      function Application(applicative, args) {
+        this.applicative = applicative,
+        this.arguments = args;
+      }
+      Application.prototype.compile = function() {
+        return new Fragment(this.applicative.compile() +
+                            "(" +
+                            this.arguments.map(function(arg) {
+                              return arg.compile();
+                            }).join(", ")
+                            + ")").code;
+      };
+
       function Fragment(code, location_info) {
         this.code = code;
         this.location_info = location_info;
@@ -384,12 +512,20 @@
       /*
        * Utils
        */
+      function isType(x, Type) {
+        return Object.prototype.toString.call(x) == "[object "+Type+"]";
+      }
+
+      function isArray(x) {
+        return isType(x, "Array");
+      }
+
       function isString(x) {
-        return Object.prototype.toString.call(x) == "[object String]";
+        return isType(x, "String");
       }
 
       function isNumber(x) {
-        return Object.prototype.toString.call(x) == "[object Number]";
+        return isType(x, "Number");
       }
 
       return exports;
