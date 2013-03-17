@@ -10,7 +10,7 @@ describe("streams", function() {
   describe("Stream", function() {
     var Stream = streams.Stream;
     var EofError = streams.EofError;
-    describe("#next", function() {
+    describe("#next()", function() {
       it("consumes and returns the next item in the stream", function() {
         var stream = new Stream("foo");
         assert.equal("f", stream.next());
@@ -46,7 +46,7 @@ describe("streams", function() {
         assert.equal(eof_val, stream.next(false, eof_val));
       });
     });
-    describe("#peek", function() {
+    describe("#peek()", function() {
       it("returns the next item in the stream without consuming it", function() {
         var stream = new Stream("foo");
         assert.equal("f", stream.peek());
