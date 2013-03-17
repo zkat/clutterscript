@@ -104,6 +104,7 @@
     };
 
     var Readtable = exports.Readtable = function(opts) {
+      opts = opts || {};
       var merge_with = opts.merge || exports.READTABLE || {};
       this.macro_functions = merge(merge_with.macro_functions,
                                    opts.macro_functions || {});
