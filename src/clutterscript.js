@@ -334,9 +334,59 @@
    * Compiler
    */
   var compiler = exports.compiler = (function(exports) {
-    var compile = exports.compile = function (node, env) {
-      return node.compile(env);
+
+    var compile = exports.compile = function (string, env) {
+      // TODO - this only reads a single expression
+      return compile_form(reader.read(string), new Lexenv(env));
     };
+
+    var compile_form = exports.compile_form = function(form, env) {
+      return nodes.objectify(form, env).compile();
+    };
+
+    var GLOBAL_LEXENV = undefined;
+
+    var Lexenv = exports.Lexenv = function(parent) {
+      parent = parent || GLOBAL_LEXENV;
+    };
+
+    GLOBAL_LEXENV = new Lexenv();
+
+    var nodes = exports.nodes = (function(exports) {
+
+      var objectify = exports.objectify = function(form, env) {
+        return objectify_literal(form, env);
+      };
+
+      function objectify_literal(form, env) {
+        return new Literal(form);
+      }
+
+      function Literal(value) {
+        this.value = value;
+      }
+      Literal.prototype.compile = function() {
+        return new Fragment(isString(this.value)?'"'+this.value+'"':""+this.value).code;
+      };
+
+      function Fragment(code, location_info) {
+        this.code = code;
+        this.location_info = location_info;
+      }
+
+      /*
+       * Utils
+       */
+      function isString(x) {
+        return Object.prototype.toString.call(x) == "[object String]";
+      }
+
+      function isNumber(x) {
+        return Object.prototype.toString.call(x) == "[object Number]";
+      }
+
+      return exports;
+    })({});
 
     return exports;
   })({});

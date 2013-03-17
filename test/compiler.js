@@ -7,9 +7,18 @@ var clutterscript = require("../src/clutterscript");
 
 describe("compiler", function() {
   var compiler = clutterscript.compiler;
-  describe("compileToFragments", function() {
-    var compileToFragments = compiler.compileToFragments;
-    it("compiles already-read code into fragments", function() {
+  describe("compile", function() {
+    var compile = compiler.compile;
+    it("compiles a string of ClutterScript code to JavaScript", function() {
+    });
+  });
+  describe("compile_form", function() {
+    var compile_form = compiler.compile_form;
+    var Lexenv = compiler.Lexenv;
+    it("compiles literals into their string representation", function() {
+      assert.equal("1", compile_form(1, new Lexenv()));
+      assert.equal("1.5", compile_form(1.5, new Lexenv()));
+      assert.equal("\"foo\"", compile_form("foo", new Lexenv()));
     });
   });
 });
