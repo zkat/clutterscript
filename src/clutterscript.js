@@ -341,5 +341,12 @@
     return exports;
   })({});
 
+  /*
+   * ClutterScript main interface
+   */
+  var compile = exports.compile = function (string) {
+    return "(function() { return "+string+"; })();";
+  };
+
   return exports;
 });
