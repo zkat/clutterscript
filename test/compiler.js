@@ -16,9 +16,24 @@ describe("compiler", function() {
     var compile_form = compiler.compile_form;
     var Lexenv = compiler.lexenvs.Lexenv;
     it("compiles literals into their string representation", function() {
-      assert.equal("1", compile_form(1, new Lexenv()));
-      assert.equal("1.5", compile_form(1.5, new Lexenv()));
-      assert.equal("\"foo\"", compile_form("foo", new Lexenv()));
+      var env = new Lexenv();
+      assert.equal("1", compile_form(1, env));
+      assert.equal("1.5", compile_form(1.5, env));
+      assert.equal("\"foo\"", compile_form("foo", env));
+    });
+    it("compiles variables into valid JavaScript variables", function() {
+      var intern = clutterscript.symbols.intern;
+      var env = new Lexenv();
+      assert.equal("foo", compile_form(intern("foo"), env));
+      assert.equal("foo123", compile_form(intern("foo123"), env));
+      assert.equal("foo_bar", compile_form(intern("foo_bar"), env));
+    });
+    it("compiles applications into JS function calls", function() {
+      var intern = clutterscript.symbols.intern;
+      var env = new Lexenv();
+      assert.equal("foo(1)", compile_form([intern("foo"), 1], env));
+      assert.equal("foo()", compile_form([intern("foo")], env));
+      assert.equal("foo(1, 2)", compile_form([intern("foo"), 1, 2], env));
     });
   });
 });
