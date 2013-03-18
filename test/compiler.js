@@ -40,5 +40,11 @@ describe("compiler", function() {
       var env = new Lexenv();
       assert.equal("1?2:3", compile_form([intern("if"), 1, 2, 3], env));
     });
+    it("compiles do forms to a sequence of JS expressions", function() {
+      var intern = clutterscript.symbols.intern;
+      var env = new Lexenv();
+      assert.equal("1", compile_form([intern("do"), 1], env));
+      assert.equal("1, 2, 3", compile_form([intern("do"), 1, 2, 3], env));
+    });
   });
 });

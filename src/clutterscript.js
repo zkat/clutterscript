@@ -437,13 +437,22 @@
                                      objectify(alt, env));
       }
 
+      function objectify_sequence(forms, env) {
+        return new nodes.Sequence(
+          forms.map(function(arg) {
+            return objectify(arg, env);
+          }),
+          env);
+      }
+
       /*
        * Special forms
        */
       var SPECIAL_FORMS = {
         if: function(args, env) {
           return objectify_alternative(args[0], args[1], args[2], env);
-        }
+        },
+        do: objectify_sequence
       };
 
       return exports;
@@ -491,6 +500,15 @@
                             this.alternant.compile()).code;
       };
 
+      var Sequence = exports.Sequence = function(expressions) {
+        this.expressions = expressions;
+
+      };
+      Sequence.prototype.compile = function() {
+        return new Fragment(this.expressions.map(function(expr) {
+          return expr.compile();
+        }).join(", ")).code;
+      };
 
       /*
        * Misc
