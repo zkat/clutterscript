@@ -345,7 +345,7 @@
     };
 
     var compile_form = exports.compile_form = function(form, env) {
-      return nodes.objectify(form, env).compile();
+      return objectification.objectify(form, env).compile();
     };
 
     /*
@@ -380,15 +380,16 @@
       function Variable(symbol) {
         this.symbol = symbol;
       }
+
       exports.GLOBAL_LEXENV = new Lexenv();
 
       return exports;
     })({});
 
-    var nodes = exports.nodes = (function(exports) {
+    var objectification = exports.objectification = (function(exports) {
 
       var objectify = exports.objectify = function(form, env) {
-        if (isArray(form)) {
+        if (utils.isArray(form)) {
           return objectify_operation(form[0], form.slice(1), env);
         } else {
           if (symbols.isSymbol(form)) {
@@ -400,20 +401,13 @@
       };
 
       function objectify_literal(form, env) {
-        return new Literal(form);
+        return new nodes.Literal(form);
       }
-
-      function Literal(value) {
-        this.value = value;
-      }
-      Literal.prototype.compile = function() {
-        return new Fragment(isString(this.value)?'"'+this.value+'"':""+this.value).code;
-      };
 
       function objectify_symbol(symbol, env) {
         var variable = env.find_variable(symbol);
         if (variable) {
-          return new Reference(variable);
+          return new nodes.Reference(variable);
         } else {
           return objectify_free_global_variable(symbol, env);
         }
@@ -421,20 +415,104 @@
 
       function objectify_free_global_variable(symbol, env) {
         console.warn("Compiling reference to unknown variable");
-        return new Reference(lexenvs.GLOBAL_LEXENV.extend(symbol));
+        return new nodes.Reference(lexenvs.GLOBAL_LEXENV.extend(symbol));
       }
 
-      function Reference(variable) {
-        this.variable = variable;
+
+      function objectify_operation(op, args, env) {
+        return new nodes.Application(objectify(op, env),
+                                     args.map(function(arg) {
+                                       return objectify(arg, env);
+                                     }));
       }
-      Reference.prototype.compile = function() {
-        return new Fragment(ensure_js_identifier(this.variable.symbol.name)).code;
+
+      function objectify_alternative(cond, cons, alt, env) {
+        return new nodes.Alternative(objectify(cond, env),
+                                     objectify(cons, env),
+                                     objectify(alt, env));
+      }
+
+      return exports;
+    })({});
+
+    var nodes = exports.nodes = (function(exports) {
+
+      var Literal = exports.Literal = function(value) {
+        this.value = value;
+      };
+      Literal.prototype.compile = function() {
+        return new Fragment(
+          utils.isString(this.value)?'"'+this.value+'"':""+this.value).code;
       };
 
-      function ensure_js_identifier(name) {
+      var Reference = exports.Reference = function(variable) {
+        this.variable = variable;
+      };
+      Reference.prototype.compile = function() {
+        return new Fragment(
+          utils.ensure_js_identifier(this.variable.symbol.name)).code;
+      };
+
+      var Application = exports.Application = function(applicative, args) {
+        this.applicative = applicative,
+        this.arguments = args;
+      };
+      Application.prototype.compile = function() {
+        return new Fragment(this.applicative.compile() +
+                            "(" +
+                            this.arguments.map(function(arg) {
+                              return arg.compile();
+                            }).join(", ")
+                            + ")").code;
+      };
+
+      var Alternative = exports.Alternative = function(condition, consequent, alternant) {
+        this.condition = condition;
+        this.consequent = consequent;
+        this.alternant = alternant;
+      };
+      Alternative.prototype.compile = function() {
+        return new Fragment(this.condition.compile() + "?" +
+                            this.consequent.compile() + ":" +
+                            this.alternant.compile()).code;
+      };
+
+
+      /*
+       * Misc
+       */
+      function Fragment(code, location_info) {
+        this.code = code;
+        this.location_info = location_info;
+      }
+
+      return exports;
+    })({});
+
+    var utils = exports.utils = (function(require) {
+      function isType(x, Type) {
+        return Object.prototype.toString.call(x) == "[object "+Type+"]";
+      }
+
+      exports.isArray = function(x) {
+        return isType(x, "Array");
+      };
+
+      exports.isString = function(x) {
+        return isType(x, "String");
+      };
+
+      exports.isNumber = function(x) {
+        return isType(x, "Number");
+      };
+
+      /*
+       * Converting identifiers
+       */
+      exports.ensure_js_identifier = function(name) {
         // Punt on JSification for now. It'll take a while.
         return name;
-      }
+      };
 
       // http://es5.github.com/x7.html#x7.6.1
       var JS_KEYWORDS = ["break", "case", "catch", "continue",
@@ -483,50 +561,6 @@
         ":": "colon",
         "/": "slash"
       };
-
-      function objectify_operation(op, args, env) {
-        return new Application(objectify(op, env),
-                               args.map(function(arg) {
-                                 return objectify(arg, env);
-                               }));
-      }
-
-      function Application(applicative, args) {
-        this.applicative = applicative,
-        this.arguments = args;
-      }
-      Application.prototype.compile = function() {
-        return new Fragment(this.applicative.compile() +
-                            "(" +
-                            this.arguments.map(function(arg) {
-                              return arg.compile();
-                            }).join(", ")
-                            + ")").code;
-      };
-
-      function Fragment(code, location_info) {
-        this.code = code;
-        this.location_info = location_info;
-      }
-
-      /*
-       * Utils
-       */
-      function isType(x, Type) {
-        return Object.prototype.toString.call(x) == "[object "+Type+"]";
-      }
-
-      function isArray(x) {
-        return isType(x, "Array");
-      }
-
-      function isString(x) {
-        return isType(x, "String");
-      }
-
-      function isNumber(x) {
-        return isType(x, "Number");
-      }
 
       return exports;
     })({});
