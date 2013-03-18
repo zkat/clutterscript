@@ -420,10 +420,15 @@
 
 
       function objectify_operation(op, args, env) {
-        return new nodes.Application(objectify(op, env),
-                                     args.map(function(arg) {
-                                       return objectify(arg, env);
-                                     }));
+        var special_handler = symbols.isSymbol(op)?SPECIAL_FORMS[op.name]:undefined;
+        if (special_handler) {
+          return special_handler(args, env);
+        } else {
+          return new nodes.Application(objectify(op, env),
+                                       args.map(function(arg) {
+                                         return objectify(arg, env);
+                                       }));
+        }
       }
 
       function objectify_alternative(cond, cons, alt, env) {
@@ -431,6 +436,15 @@
                                      objectify(cons, env),
                                      objectify(alt, env));
       }
+
+      /*
+       * Special forms
+       */
+      var SPECIAL_FORMS = {
+        if: function(args, env) {
+          return objectify_alternative(args[0], args[1], args[2], env);
+        }
+      };
 
       return exports;
     })({});
