@@ -444,6 +444,15 @@
           }));
       }
 
+      function objectify_abstraction(arglist, body, env) {
+        // TODO - need to create a subenv here
+        return new nodes.Abstraction(
+          arglist.map(function(arg) {
+            return objectify_symbol(arg, env);
+          }),
+          objectify_sequence(body, env)
+        );
+      }
       /*
        * Special forms
        */
@@ -451,7 +460,10 @@
         if: function(args, env) {
           return objectify_alternative(args[0], args[1], args[2], env);
         },
-        do: objectify_sequence
+        do: objectify_sequence,
+        lambda: function(args, env) {
+          return objectify_abstraction(args[0], args.slice(1), env);
+        }
       };
 
       return exports;
@@ -507,6 +519,19 @@
         return new Fragment(this.expressions.map(function(expr) {
           return expr.compile();
         }).join(", ")).code;
+      };
+
+      var Abstraction = exports.Abstraction = function(args, body) {
+        this.args = args;
+        this.body = body;
+      };
+      Abstraction.prototype.compile = function() {
+        return new Fragment(
+          "(function(" +
+            this.args.map(function(arg) { return arg.compile(); }).join(", ") +
+            ") { return " +
+            this.body.compile() +
+            "; })").code;
       };
 
       /*

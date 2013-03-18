@@ -46,5 +46,18 @@ describe("compiler", function() {
       assert.equal("1", compile_form([intern("do"), 1], env));
       assert.equal("1, 2, 3", compile_form([intern("do"), 1, 2, 3], env));
     });
+    it("compiles lambda forms to JS function expressions", function() {
+      var intern = clutterscript.symbols.intern;
+      var env = new Lexenv();
+      assert.equal("(function() { return 1; })",
+                   compile_form([intern("lambda"), [], 1], env));
+      assert.equal("(function(x) { return x; })",
+                   compile_form([intern("lambda"), [intern("x")], intern("x")],
+                                env));
+      var args = ["x", "y", "z"].map(intern);
+      assert.equal("(function(x, y, z) { return x, y, z; })",
+                   compile_form([intern("lambda"), args].concat(args),
+                                env));
+    });
   });
 });
