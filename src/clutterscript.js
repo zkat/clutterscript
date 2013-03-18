@@ -441,8 +441,7 @@
         return new nodes.Sequence(
           forms.map(function(arg) {
             return objectify(arg, env);
-          }),
-          env);
+          }));
       }
 
       /*
