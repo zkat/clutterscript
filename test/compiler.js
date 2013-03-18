@@ -35,5 +35,10 @@ describe("compiler", function() {
       assert.equal("foo()", compile_form([intern("foo")], env));
       assert.equal("foo(1, 2)", compile_form([intern("foo"), 1, 2], env));
     });
+    it("compiles if forms to ternary JS expressions", function() {
+      var intern = clutterscript.symbols.intern;
+      var env = new Lexenv();
+      assert.equal("1?2:3", compile_form([intern("if"), 1, 2, 3], env));
+    });
   });
 });
