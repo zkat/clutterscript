@@ -6,7 +6,7 @@ build/clutterscript.min.js build/clutterscript.js.src: build/clutterscript.js
 		-o build/clutterscript.min.js \
 		--source-map build/clutterscript.js.src
 
-build/clutterscript.js: src/*.js build
+build/clutterscript.js: src/*.js | build
 	browserify src/clutterscript.js -o build/clutterscript.js
 
 build:
