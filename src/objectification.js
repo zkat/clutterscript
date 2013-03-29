@@ -41,16 +41,11 @@ function objectify_free_global_variable(symbol, env) {
 
 
 function objectify_operation(op, args, env) {
-  var special_form = symbols.isSymbol(op)?SPECIAL_FORMS[op.name]:undefined;
-  if (special_form) {
-    return special_form(args, env);
-  } else {
-    return new nodes.Application(objectify(op, env),
-                                 args.map(function(arg) {
-                                   return objectify(arg, env);
-                                 }));
-  }
-}
+  return new nodes.Operation(objectify(op, env),
+                             args.map(function(arg) {
+                               return objectify_literal(arg, env);
+                             }));
+};
 
 function objectify_alternative(cond, cons, alt, env) {
   return new nodes.Alternative(objectify(cond, env),
