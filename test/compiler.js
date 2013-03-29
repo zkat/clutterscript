@@ -65,4 +65,37 @@ describe("compiler", function() {
                                 env));
     });
   });
+  describe("lexenvs", function() {
+    var lexenvs = compiler.lexenvs;
+    describe("make_lexenv", function() {
+      var make_lexenv = lexenvs.make_lexenv;
+      it("returns a new lexical environment", function() {
+        assert.equal(true, typeof make_lexenv() === "object");
+      });
+      it("returns a child environment if given an env as an argument", function() {
+        var parent = make_lexenv();
+        assert.equal(parent, make_lexenv(parent).parent);
+      });
+      it("contains a list of variables", function() {
+        assert.deepEqual([], make_lexenv().variables);
+      });
+    });
+    describe("find_variable", function() {
+      var intern = clutterscript.symbols.intern;
+      var make_lexenv = lexenvs.make_lexenv;
+      var extend = lexenvs.extend;
+      var find_variable = lexenvs.find_variable;
+      it("returns false if no such symbol exists", function() {
+        // TODO - currently failing because we're enriching GLOBAL_LEXENV. Phooey
+        assert.equal(false, find_variable(make_lexenv(), intern("x")));
+      });
+      it("returns the appropriate variable if a matching symbol is found", function() {
+        var lexenv = make_lexenv();
+        var symbol = intern("x");
+        var variable = extend(lexenv, symbol);
+        assert.equal(variable, find_variable(lexenv, symbol));
+        assert.equal(variable, find_variable(make_lexenv(lexenv), symbol));
+      });
+    });
+  });
 });
