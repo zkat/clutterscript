@@ -3,10 +3,11 @@
 /* vim: set ft=javascript ts=2 et sw=2 tw=80; */
 "use strict";
 var assert = require("assert");
-var clutterscript = require("../src/clutterscript");
+var reader = require("../src/reader");
+var symbols = require("../src/symbols");
+var streams = require("../src/streams");
 
 describe("reader", function() {
-  var reader = clutterscript.reader;
   describe("readtables", function() {
     describe("standard_readtable", function() {
       it("is accessible through the reader", function() {
@@ -50,7 +51,7 @@ describe("reader", function() {
         };
         assert.deepEqual(["not", 1], reader.read("!1"));
         delete macro_functions["!"];
-        assert.equal(clutterscript.symbols.intern("!1"), reader.read("!1"));
+        assert.equal(symbols.intern("!1"), reader.read("!1"));
       });
       it("allows adding and removing string_escape_mappings", function() {
         var mappings = standard_readtable.string_escape_mappings;
@@ -96,7 +97,7 @@ describe("reader", function() {
       assert.deepEqual([1,2,3], read("(1 2 3) (4 5 6)"));
     });
     it("throws an EofError if there's nothing to read", function() {
-      assert.throws(function() {read("");}, clutterscript.streams.EofError);
+      assert.throws(function() {read("");}, streams.EofError);
     });
     describe("tokens", function() {
       it("reads integers as integers in base10", function() {
@@ -120,7 +121,7 @@ describe("reader", function() {
       });
       it("reads anything else as interned symbols", function() {
         var result = read("x");
-        assert.equal(true, result instanceof clutterscript.symbols.Symbol);
+        assert.equal(true, result instanceof symbols.Symbol);
         assert.equal(result, read("x"));
         assert.equal("foo-bar-baz", (read("foo-bar-baz")).name);
         assert.equal("foo.bar", (read("foo.bar")).name);
@@ -135,10 +136,9 @@ describe("reader", function() {
         assert.deepEqual([1,2.5,"3"], read("(1 2.5 \"3\")"));
       });
       it("throws an EofError if it immediately reads an unmatched ')'", function() {
-        assert.throws(function() {read(")");}, clutterscript.streams.EofError);
+        assert.throws(function() {read(")");}, streams.EofError);
       });
       it("expands '<item> into (quote <item>)", function() {
-        var symbols = clutterscript.symbols;
         assert.deepEqual([symbols.intern("quote"), 1],
                          read("'1"));
         assert.deepEqual([symbols.intern("quote"), "foo"],

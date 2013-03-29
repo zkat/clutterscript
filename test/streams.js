@@ -3,10 +3,9 @@
 /* vim: set ft=javascript ts=2 et sw=2 tw=80; */
 "use strict";
 var assert = require("assert");
-var clutterscript = require("../src/clutterscript");
+var streams = require("../src/streams");
 
 describe("streams", function() {
-  var streams = clutterscript.streams;
   describe("Stream", function() {
     var Stream = streams.Stream;
     var EofError = streams.EofError;
