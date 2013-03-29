@@ -3,6 +3,9 @@
 /* vim: set ft=javascript ts=2 et sw=2 tw=80; */
 "use strict";
 
+/*
+ * Types
+ */
 function isType(x, Type) {
   return Object.prototype.toString.call(x) == "[object "+Type+"]";
 }
@@ -19,6 +22,9 @@ exports.isNumber = function(x) {
   return isType(x, "Number");
 };
 
+/*
+ * Array-likes
+ */
 exports.find = function(match, seq, opts) {
   opts = opts || {};
   var test = opts.test || eql;
@@ -42,6 +48,9 @@ var find_if = exports.find_if = function(test, seq, opts) {
   return null;
 };
 
+/*
+ * Functional utilities
+ */
 var complement = exports.complement = function(x) {
   return function() {
     return !x.apply(this, arguments);
@@ -62,6 +71,9 @@ exports.method = function(method_name) {
   };
 };
 
+/*
+ * Objects
+ */
 exports.make_maker = function(Constructor) {
   return function() {
     var args = arguments;
