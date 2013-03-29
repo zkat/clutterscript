@@ -14,41 +14,46 @@ describe("compiler", function() {
   });
   describe("compile_form", function() {
     var compile_form = compiler.compile_form;
-    var Lexenv = compiler.lexenvs.Lexenv;
+    var make_lexenv = compiler.lexenvs.make_lexenv;
     it("compiles literals into their string representation", function() {
-      var env = new Lexenv();
+      var env = make_lexenv();
       assert.equal("1", compile_form(1, env));
       assert.equal("1.5", compile_form(1.5, env));
       assert.equal("\"foo\"", compile_form("foo", env));
     });
     it("compiles variables into valid JavaScript variables", function() {
       var intern = clutterscript.symbols.intern;
-      var env = new Lexenv();
+      var env = make_lexenv();
       assert.equal("foo", compile_form(intern("foo"), env));
       assert.equal("foo123", compile_form(intern("foo123"), env));
       assert.equal("foo_bar", compile_form(intern("foo_bar"), env));
     });
     it("compiles applications into JS function calls", function() {
       var intern = clutterscript.symbols.intern;
-      var env = new Lexenv();
+      var env = make_lexenv();
       assert.equal("foo(1)", compile_form([intern("foo"), 1], env));
       assert.equal("foo()", compile_form([intern("foo")], env));
       assert.equal("foo(1, 2)", compile_form([intern("foo"), 1, 2], env));
     });
-    it("compiles if forms to ternary JS expressions", function() {
+    it("compiles if forms to ternary JS expressions or if statements", function() {
       var intern = clutterscript.symbols.intern;
-      var env = new Lexenv();
-      assert.equal("1?2:3", compile_form([intern("if"), 1, 2, 3], env));
+      var env = make_lexenv();
+      assert.equal("if (1) { 2; } else { 3; }",
+                   compile_form([intern("if"), 1, 2, 3], env));
+      assert.equal("foo(1?2:3)",
+                   compile_form([intern("foo"), [intern("if"), 1, 2, 3]], env));
     });
-    it("compiles do forms to a sequence of JS expressions", function() {
+    it("compiles do forms to a sequence of JS expressions or statements", function() {
       var intern = clutterscript.symbols.intern;
-      var env = new Lexenv();
+      var env = make_lexenv();
       assert.equal("1", compile_form([intern("do"), 1], env));
-      assert.equal("1, 2, 3", compile_form([intern("do"), 1, 2, 3], env));
+      assert.equal("1; 2; 3;", compile_form([intern("do"), 1, 2, 3], env));
+      assert.equal("foo((1, 2, 3), 4)",
+                   compile_form([intern("foo"), [intern("do"), 1, 2, 3], 4], env));
     });
     it("compiles lambda forms to JS function expressions", function() {
       var intern = clutterscript.symbols.intern;
-      var env = new Lexenv();
+      var env = make_lexenv();
       assert.equal("(function() { return 1; })",
                    compile_form([intern("lambda"), [], 1], env));
       assert.equal("(function(x) { return x; })",

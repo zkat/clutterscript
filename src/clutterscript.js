@@ -463,7 +463,7 @@
 
     var compile = exports.compile = function (string, env) {
       // TODO - this only reads a single expression
-      return compile_form(reader.read(string), new lexenvs.Lexenv(env));
+      return compile_form(reader.read(string), lexenvs.make_lexenv(env));
     };
 
     var compile_form = exports.compile_form = function(form, env) {
@@ -476,26 +476,23 @@
     var lexenvs = exports.lexenvs = (function(exports) {
       exports.GLOBAL_LEXENV = undefined;
 
-      var Lexenv = exports.Lexenv = function(parent, variables) {
+      function Lexenv(parent, variables) {
         this.parent = parent || exports.GLOBAL_LEXENV;
         this.variables = variables || [];
       };
-      Lexenv.prototype.extend = function(symbol) {
+
+      var make_lexenv = exports.make_lexenv = utils.make_maker(Lexenv);
+
+      exports.extend = function(lexenv, symbol) {
         var variable = new Variable(symbol);
-        this.variables.push(variable);
+        lexenv.variables.push(variable);
         return variable;
       };
-      Lexenv.prototype.find_variable = function(symbol) {
-        for (var i = 0; i < this.variables.length; i++) {
-          if (this.variables[i].symbol == symbol) {
-            return this.variables[i];
-          }
-        }
-        if (this.parent) {
-          return this.parent.find_variable(symbol);
-        } else {
-          return false;
-        }
+
+      exports.find_variable = function find_variable(env, symbol) {
+        return utils.find(symbol, env.variables, {
+          key: utils.getter("symbol")
+        }) || (env.parent ? find_variable(env.parent, symbol) : false);
       };
 
       function symbolicate(x) { return new Variable(x); };
@@ -503,7 +500,7 @@
         this.symbol = symbol;
       }
 
-      exports.GLOBAL_LEXENV = new Lexenv();
+      exports.GLOBAL_LEXENV = make_lexenv();
 
       return exports;
     })({});
@@ -527,7 +524,7 @@
       }
 
       function objectify_symbol(symbol, env) {
-        var variable = env.find_variable(symbol);
+        var variable = lexenvs.find_variable(env, symbol);
         if (variable) {
           return new nodes.Reference(variable);
         } else {
@@ -537,14 +534,15 @@
 
       function objectify_free_global_variable(symbol, env) {
         console.warn("Compiling reference to unknown variable");
-        return new nodes.Reference(lexenvs.GLOBAL_LEXENV.extend(symbol));
+        // TODO - don't extend the single global lexenv, wtf
+        return new nodes.Reference(lexenvs.extend(lexenvs.GLOBAL_LEXENV, symbol));
       }
 
 
       function objectify_operation(op, args, env) {
-        var special_handler = symbols.isSymbol(op)?SPECIAL_FORMS[op.name]:undefined;
-        if (special_handler) {
-          return special_handler(args, env);
+        var special_form = symbols.isSymbol(op)?SPECIAL_FORMS[op.name]:undefined;
+        if (special_form) {
+          return special_form(args, env);
         } else {
           return new nodes.Application(objectify(op, env),
                                        args.map(function(arg) {
