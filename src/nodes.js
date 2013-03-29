@@ -32,12 +32,12 @@ Reference.prototype.compile = function() {
   return utils.ensure_js_identifier(this.variable.symbol.name);
 };
 
-var Application = exports.Application = function(applicative, args) {
-  this.applicative = applicative,
+var Operation = exports.Operation = function(operative, args) {
+  this.operative = operative;
   this.arguments = args;
 };
-Application.prototype.compile = function() {
-  return this.applicative.compile() +
+Operation.prototype.compile = function() {
+  return "("+this.operative.compile()+")" +
     "(" +
     this.arguments.map(function(arg) {
       return arg.compile();
