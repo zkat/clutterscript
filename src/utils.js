@@ -65,6 +65,17 @@ exports.make_maker = function(Constructor) {
   };
 };
 
+exports.merge = function(obj1, obj2) {
+  var obj3 = {};
+  for (var attr1 in obj1) {
+    if (obj1.hasOwnProperty(attr1)) obj3[attr1] = obj1[attr1];
+  };
+  for (var attr2 in obj2) {
+    if (obj2.hasOwnProperty(attr2)) obj3[attr2] = obj2[attr2];
+  };
+  return obj3;
+};
+
 /*
  * Converting identifiers
  */
