@@ -56,6 +56,12 @@ exports.getter = function(property_name) {
   return function(obj) { return obj[property_name]; };
 };
 
+exports.method = function(method_name) {
+  return function(obj) {
+    return obj[method_name].apply(obj, [].slice.call(arguments, 1));
+  };
+};
+
 exports.make_maker = function(Constructor) {
   return function() {
     var args = arguments;
