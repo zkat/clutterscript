@@ -4,12 +4,25 @@
 "use strict";
 
 var utils = require("./utils");
+var symbols=require("./symbols");
 
 var Literal = exports.Literal = function(value) {
   this.value = value;
 };
-Literal.prototype.compile = function() {
-  return utils.isString(this.value)?'"'+this.value+'"':""+this.value;
+Literal.prototype.compile = function compile() {
+  if (utils.isString(this.value)) {
+    return '"'+this.value+'"';
+  } else if (symbols.isSymbol(this.value)) {
+    return "clutterscript.symbols.intern(\""+this.value+"\")";
+  } else if (utils.isArray(this.value)) {
+    return "[" +
+      this.value.map(function(val) {
+        return compile.call(val);
+      }).join(", ") +
+      "]";
+  } else {
+    return ""+this.value;
+  }
 };
 
 var Reference = exports.Reference = function(variable) {
