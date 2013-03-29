@@ -60,12 +60,15 @@ function objectify_sequence(forms, env) {
 }
 
 function objectify_abstraction(arglist, body, env) {
-  // TODO - need to create a subenv here
+  var new_env = lexenvs.make_lexenv(env);
+  arglist.forEach(function(arg) {
+    lexenvs.extend(new_env, arg);
+  });
   return new nodes.Abstraction(
     arglist.map(function(arg) {
-      return objectify_symbol(arg, env);
+      return objectify_symbol(arg, new_env);
     }),
-    objectify_sequence(body, env)
+    objectify_sequence(body, new_env)
   );
 }
 /*
