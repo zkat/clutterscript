@@ -34,11 +34,10 @@ function objectify_symbol(symbol, env) {
 }
 
 function objectify_free_global_variable(symbol, env) {
-  console.warn("Compiling reference to unknown variable");
-  // TODO - don't extend the single global lexenv, wtf
-  return new nodes.Reference(lexenvs.extend(lexenvs.GLOBAL_LEXENV, symbol));
+  throw new Error("free globals are not supported right now");
+  //console.warn("Compiling reference to unknown variable");
+  //return new nodes.Reference(lexenvs.extend(lexenvs.GLOBAL_LEXENV, symbol));
 }
-
 
 function objectify_operation(op, args, env) {
   return new nodes.Operation(objectify(op, env),
