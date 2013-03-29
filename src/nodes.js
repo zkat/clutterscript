@@ -9,16 +9,14 @@ var Literal = exports.Literal = function(value) {
   this.value = value;
 };
 Literal.prototype.compile = function() {
-  return new Fragment(
-    utils.isString(this.value)?'"'+this.value+'"':""+this.value).code;
+  return utils.isString(this.value)?'"'+this.value+'"':""+this.value;
 };
 
 var Reference = exports.Reference = function(variable) {
   this.variable = variable;
 };
 Reference.prototype.compile = function() {
-  return new Fragment(
-    utils.ensure_js_identifier(this.variable.symbol.name)).code;
+  return utils.ensure_js_identifier(this.variable.symbol.name);
 };
 
 var Application = exports.Application = function(applicative, args) {
@@ -26,12 +24,12 @@ var Application = exports.Application = function(applicative, args) {
   this.arguments = args;
 };
 Application.prototype.compile = function() {
-  return new Fragment(this.applicative.compile() +
-                      "(" +
-                      this.arguments.map(function(arg) {
-                        return arg.compile();
-                      }).join(", ")
-                      + ")").code;
+  return this.applicative.compile() +
+    "(" +
+    this.arguments.map(function(arg) {
+      return arg.compile();
+    }).join(", ")
+    + ")";
 };
 
 var Alternative = exports.Alternative = function(condition, consequent, alternant) {
@@ -40,9 +38,9 @@ var Alternative = exports.Alternative = function(condition, consequent, alternan
   this.alternant = alternant;
 };
 Alternative.prototype.compile = function() {
-  return new Fragment(this.condition.compile() + "?" +
-                      this.consequent.compile() + ":" +
-                      this.alternant.compile()).code;
+  return this.condition.compile() + "?" +
+    this.consequent.compile() + ":" +
+    this.alternant.compile();
 };
 
 var Sequence = exports.Sequence = function(expressions) {
@@ -50,9 +48,9 @@ var Sequence = exports.Sequence = function(expressions) {
 
 };
 Sequence.prototype.compile = function() {
-  return new Fragment(this.expressions.map(function(expr) {
+  return this.expressions.map(function(expr) {
     return expr.compile();
-  }).join(", ")).code;
+  }).join(", ");
 };
 
 var Abstraction = exports.Abstraction = function(args, body) {
@@ -60,19 +58,9 @@ var Abstraction = exports.Abstraction = function(args, body) {
   this.body = body;
 };
 Abstraction.prototype.compile = function() {
-  return new Fragment(
-    "(function(" +
-      this.args.map(function(arg) { return arg.compile(); }).join(", ") +
-      ") { return " +
-      this.body.compile() +
-      "; })").code;
+  return "(function(" +
+    this.args.map(function(arg) { return arg.compile(); }).join(", ") +
+    ") { return " +
+    this.body.compile() +
+    "; })";
 };
-
-/*
- * Misc
- */
-function Fragment(code, location_info) {
-  this.code = code;
-  this.location_info = location_info;
-}
-
