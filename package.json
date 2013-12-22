@@ -1,0 +1,31 @@
+{
+  "name": "clutterscript",
+  "version": "0.0.0",
+  "description": "JavaScript compiler for ClutterScript",
+  "main": "src/clutterscript.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/zkat/clutterscript"
+  },
+  "keywords": [
+    "compiler",
+    "altjs",
+    "lisp"
+  ],
+  "author": "Kat Marchán <kzm@sykosomatic.org>",
+  "license": "CC0",
+  "bugs": {
+    "url": "https://github.com/zkat/clutterscript/issues"
+  },
+  "devDependencies": {
+    "mocha": "~1.16.1",
+    "uglifyjs": "~2.3.6",
+    "browserify": "~3.14.0"
+  }
+}
