@@ -26,6 +26,7 @@
   "devDependencies": {
     "mocha": "~1.16.1",
     "uglifyjs": "~2.3.6",
-    "browserify": "~3.14.0"
+    "browserify": "~3.14.0",
+    "lodash": "~2.4.1"
   }
 }
